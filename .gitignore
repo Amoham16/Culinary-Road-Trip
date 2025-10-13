@@ -140,3 +140,4 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+.DS_Store
