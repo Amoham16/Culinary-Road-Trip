@@ -5,12 +5,6 @@ from streamlit_folium import st_folium
 import plotly.express as px
 import numpy as np
 
-# Page configuration
-st.set_page_config(
-    page_title="Open Data Culinary Road Trip",
-    page_icon="🍽️",
-    layout="wide"
-)
 
 # Load data
 @st.cache_data
@@ -29,166 +23,14 @@ df = load_data()
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Trending Restaurants", "Nearby Restaurants Map", "Road Trip Planner"])
+page = st.sidebar.radio("Go to", ["Trending Restaurants", "Road Trip Planner"])
 
-# ===========================
-# PAGE 1: TRENDING RESTAURANTS
-# ===========================
-if page == "Trending Restaurants":
-    st.header("📈 Trending Restaurants")
-    st.markdown("Discover the most popular and highly-rated restaurants across Europe")
-    
-    # Filter options
-    col1, col2 = st.columns(2)
-    with col1:
-        country_filter = st.multiselect(
-            "Filter by Country",
-            options=sorted(df['country'].unique()),
-            default=None
-        )
-    with col2:
-        cuisine_filter = st.multiselect(
-            "Filter by Cuisine",
-            options=sorted(df['cuisine'].unique()),
-            default=None
-        )
-    
-    # Apply filters
-    filtered_df = df.copy()
-    if country_filter:
-        filtered_df = filtered_df[filtered_df['country'].isin(country_filter)]
-    if cuisine_filter:
-        filtered_df = filtered_df[filtered_df['cuisine'].isin(cuisine_filter)]
-    
-    # Sort by rating and reviews
-    trending_df = filtered_df.sort_values(['rating', 'reviews_count'], ascending=[False, False]).head(20)
-    
-    # Display metrics
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Total Restaurants", len(filtered_df))
-    with c2:
-        st.metric("Average Rating", f"{filtered_df['rating'].mean():.2f}")
-    with c3:
-        st.metric("Countries", filtered_df['country'].nunique())
-    
-    # Chart: Top countries by restaurant count
-    st.subheader("Top Countries by Restaurant Count")
-    country_counts = filtered_df['country'].value_counts().head(10)
-    fig = px.bar(
-        x=country_counts.values,
-        y=country_counts.index,
-        orientation='h',
-        labels={'x': 'Number of Restaurants', 'y': 'Country'},
-        color=country_counts.values,
-        color_continuous_scale='Viridis'
-    )
-    fig.update_layout(showlegend=False, height=400)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Chart: Cuisine distribution
-    st.subheader("Cuisine Type Distribution")
-    cuisine_counts = filtered_df['cuisine'].value_counts()
-    fig2 = px.pie(
-        values=cuisine_counts.values,
-        names=cuisine_counts.index,
-        title="",
-        hole=0.4
-    )
-    fig2.update_layout(height=400)
-    st.plotly_chart(fig2, use_container_width=True)
-    
-
-# ===========================
-# PAGE 2: NEARBY RESTAURANTS MAP
-# ===========================
-elif page == "Nearby Restaurants Map":
-    st.header("🗺️ Nearby Restaurants Map")
-    st.markdown("Explore restaurants on an interactive map with advanced filters")
-    
-    # Filters in sidebar
-    st.sidebar.subheader("Map Filters")
-    selected_countries = st.sidebar.multiselect(
-        "Select Countries",
-        options=sorted(df['country'].unique()),
-        default=None
-    )
-    selected_cuisines = st.sidebar.multiselect(
-        "Select Cuisines",
-        options=sorted(df['cuisine'].unique()),
-        default=None
-    )
-    min_rating = st.sidebar.slider(
-        "Minimum Rating",
-        min_value=float(df['rating'].min()),
-        max_value=float(df['rating'].max()),
-        value=float(df['rating'].min()),
-        step=0.1
-    )
-    price_ranges = st.sidebar.multiselect(
-        "Price Range",
-        options=sorted(df['price_range'].unique()),
-        default=None
-    )
-    
-    # Apply filters
-    map_df = df.copy()
-    if selected_countries:
-        map_df = map_df[map_df['country'].isin(selected_countries)]
-    if selected_cuisines:
-        map_df = map_df[map_df['cuisine'].isin(selected_cuisines)]
-    map_df = map_df[map_df['rating'] >= min_rating]
-    if price_ranges:
-        map_df = map_df[map_df['price_range'].isin(price_ranges)]
-    
-    st.info(f"Showing {len(map_df)} restaurants based on your filters")
-    
-    if len(map_df) > 0:
-        center_lat = map_df['latitude'].mean()
-        center_lon = map_df['longitude'].mean()
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=5, tiles='OpenStreetMap')
-        
-        # Add markers
-        for _, row in map_df.iterrows():
-            if row['rating'] >= 4.7:
-                color = 'red'
-            elif row['rating'] >= 4.5:
-                color = 'orange'
-            elif row['rating'] >= 4.0:
-                color = 'green'
-            else:
-                color = 'blue'
-            popup_html = f"""
-            <div style="width: 200px;">
-                <h4>{row['name']}</h4>
-                <p><b>City:</b> {row['city']}, {row['country']}</p>
-                <p><b>Cuisine:</b> {row['cuisine']}</p>
-                <p><b>Rating:</b> ⭐ {row['rating']}</p>
-                <p><b>Price:</b> {row['price_range']}</p>
-                <p><b>Reviews:</b> {row['reviews_count']:,}</p>
-                <p><b>Phone:</b> {row['phone']}</p>
-            </div>
-            """
-            folium.Marker(
-                location=[row['latitude'], row['longitude']],
-                popup=folium.Popup(popup_html, max_width=250),
-                tooltip=row['name'],
-                icon=folium.Icon(color=color, icon='cutlery', prefix='fa')
-            ).add_to(m)
-        
-        st_folium(m, width=1400, height=600)
-        st.subheader("Restaurant Details")
-        display_df = map_df[['name', 'country', 'city', 'cuisine', 'rating', 'price_range', 'reviews_count']].copy()
-        display_df = display_df.sort_values('rating', ascending=False)
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
-    else:
-        st.warning("No restaurants match your filter criteria. Please adjust your filters.")
 
 
 # ===========================
 # PAGE 3: ROAD TRIP PLANNER
 # ===========================
-elif page == "Road Trip Planner":
+if page == "Road Trip Planner":
     st.header("🚗 Multi-Day Foodie Road Trip Planner")
     st.markdown("Plan your perfect culinary journey across Europe!")
 

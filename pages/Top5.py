@@ -44,7 +44,7 @@ df = load_data()
 # ==============================
 # 🔹 UI & FILTRES
 # ==============================
-st.title("⭐ Top Restaurants")
+st.title("⭐ Trending Restaurants")
 
 st.write("Filtre les restaurants selon tes préférences, puis affiche un Top N.")
 

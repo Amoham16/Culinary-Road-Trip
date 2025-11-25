@@ -1,8 +1,25 @@
 import streamlit as st
-import base64
+import pandas as pd
+import folium
+from streamlit_folium import st_folium
+import plotly.express as px
+import numpy as np
 from pathlib import Path
+import base64
 
-st.set_page_config(page_title="Guide Culinaire", layout="wide")
+# Page configuration
+st.set_page_config(
+    page_title="Open Data Culinary Road Trip",
+    page_icon="🍽️",
+    layout="wide"
+)
+# Load data
+@st.cache_data
+def load_data():
+    """Load the European restaurants dataset"""
+    df = pd.read_csv('european_restaurants.csv')
+    return df
+
 
 # ---------- Charger le CSS externe ----------
 with open("style.css") as f:
