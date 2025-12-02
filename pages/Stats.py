@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import pydeck as pdk
 import plotly.express as px
-from huggingface_hub import hf_hub_download
 
 st.set_page_config(page_title="Stats & Visualisations", layout="wide")
 
@@ -32,16 +31,11 @@ def load_data():
         "cuisines"
     ]
 
-    # Téléchargement depuis Hugging Face Hub
-    local_path = hf_hub_download(
-        repo_id="Amoham16/dataset-resto-10k",
-        repo_type="dataset",
-        filename="tripadvisor_clean.csv",
+    url = (
+        "https://huggingface.co/datasets/Amoham16/resto-europe/"
+        "resolve/main/tripadvisor_clean.csv"
     )
-
-    # Chargement depuis Hugging Face
-    df = pd.read_csv(local_path, usecols=usecols)
-
+    df = pd.read_csv(url, usecols=usecols)
     # Nettoyage de base
     df = df.dropna(subset=["latitude", "longitude"])
     df["cuisines"] = df["cuisines"].fillna("Inconnue")

@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from huggingface_hub import hf_hub_download
 
 # ==============================
 # 🔹 CONFIG
@@ -19,15 +18,11 @@ def load_data():
         "latitude", "longitude", "avg_rating", "total_reviews_count",
         "price_level", "cuisines"
     ]
-    # Téléchargement depuis Hugging Face Hub
-    local_path = hf_hub_download(
-        repo_id="Amoham16/dataset-resto-10k",
-        repo_type="dataset",
-        filename="tripadvisor_clean.csv",
+    url = (
+        "https://huggingface.co/datasets/Amoham16/resto-europe/"
+        "resolve/main/tripadvisor_clean.csv"
     )
-
-    # Chargement depuis Hugging Face
-    df = pd.read_csv(local_path, usecols=usecols)
+    df = pd.read_csv(url, usecols=usecols)
 
     # Nettoyage et typage
     df = df.dropna(subset=["latitude", "longitude", "avg_rating"])

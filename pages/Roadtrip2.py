@@ -3,7 +3,7 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 import numpy as np
-from huggingface_hub import hf_hub_download
+
 
 # ===========================
 # 🔹 Chargement & préparation des données
@@ -18,15 +18,12 @@ def load_data():
         "cuisines",
         "avg_rating", "total_reviews_count"
     ]
-    # Téléchargement depuis Hugging Face Hub
-    local_path = hf_hub_download(
-        repo_id="Amoham16/dataset-resto-10k",
-        repo_type="dataset",
-        filename="tripadvisor_clean.csv",
+    
+    url = (
+        "https://huggingface.co/datasets/Amoham16/resto-europe/"
+        "resolve/main/tripadvisor_clean.csv"
     )
-
-    # Chargement depuis Hugging Face
-    df = pd.read_csv(local_path, usecols=usecols)
+    df = pd.read_csv(url, usecols=usecols)
 
 
     # Nettoyage des colonnes texte
