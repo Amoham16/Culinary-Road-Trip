@@ -120,9 +120,17 @@ with c2:
         base_df = df.copy()
         possible_cities = []
 
-    # 👉 Ne pré-sélectionner des villes QUE si des pays sont choisis
+        # 👉 Ne pré-sélectionner des villes QUE si des pays sont choisis
     if preferred_countries:
-        default_cities = possible_cities[:3] if len(possible_cities) >= 3 else possible_cities
+        # Villes qu'on veut avoir par défaut
+        target_default_cities = ["Rome", "Paris", "Nice"]
+
+        # On garde seulement celles qui existent réellement dans possible_cities
+        default_cities = [c for c in target_default_cities if c in possible_cities]
+
+        # Si aucune des trois n'est dispo, on retombe sur l'ancien comportement
+        if not default_cities:
+            default_cities = possible_cities[:3] if len(possible_cities) >= 3 else possible_cities
     else:
         default_cities = []
 
