@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from huggingface_hub import hf_hub_download
 
 # ==============================
 # 🔹 CONFIG
@@ -10,21 +11,23 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==============================
-# 🔹 CHARGEMENT OPTIMISÉ DES DONNÉES
-# ==============================
-@st.cache_data(ttl=3600, max_entries=1)
+@st.cache_data(ttl=3600)
 def load_data():
+    # Colonnes à charger
     usecols = [
         "restaurant_name", "country", "region", "city",
         "latitude", "longitude", "avg_rating", "total_reviews_count",
         "price_level", "cuisines"
     ]
-
-    df = pd.read_csv(
-        "/Users/aya31/Desktop/M2 MIASHS/Open data/Culinary-Road-Trip/tripadvisor_european_restaurants.csv",
-        usecols=usecols
+    # Téléchargement depuis Hugging Face Hub
+    local_path = hf_hub_download(
+        repo_id="Amoham16/dataset-resto-10k",
+        repo_type="dataset",
+        filename="tripadvisor_clean.csv",
     )
+
+    # Chargement depuis Hugging Face
+    df = pd.read_csv(local_path, usecols=usecols)
 
     # Nettoyage et typage
     df = df.dropna(subset=["latitude", "longitude", "avg_rating"])
@@ -61,11 +64,12 @@ st.success("Données prêtes à être explorées !")
 # ==============================
 st.sidebar.header("Filtres")
 
-# --- Filtre Pays ---
+
+
 selected_countries = st.sidebar.multiselect(
     "Pays",
     country_list,
-    default=[]  # aucun pays pré-sélectionné
+    default=["France"]  
 )
 
 # --- Filtre Région dépendant ---
@@ -76,24 +80,25 @@ if selected_countries:
 else:
     possible_regions = sorted(df["region"].unique().tolist())
 
+
 selected_regions = st.sidebar.multiselect(
     "Région",
     options=possible_regions,
-    default=[]  # aucune région par défaut
+    default=[]
 )
 
 # --- Cuisine ---
 selected_cuisines = st.sidebar.multiselect(
     "Cuisine",
     cuisine_list,
-    default=[]
+    default=[]  # pas de cuisine imposée au départ
 )
 
-# --- Prix ---
+# --- Prix (tous sélectionnés par défaut) ---
 selected_prices = st.sidebar.multiselect(
     "Prix",
     price_list,
-    default=[]
+    default=price_list
 )
 
 # --- Note ---
@@ -106,32 +111,41 @@ min_rating = st.sidebar.slider(
 apply_filters = st.sidebar.button("Appliquer les filtres")
 
 # ==============================
-# MÉMORISATION DES FILTRES (Session State)
+# MÉMORISATION DES FILTRES & PREMIER CHARGEMENT
 # ==============================
 if "filtered_df" not in st.session_state:
-    # Par défaut, pas de restaurants affichés
     st.session_state.filtered_df = pd.DataFrame(columns=df.columns)
 
-if apply_filters:
-    filtered_df = df.copy()
+if "first_run" not in st.session_state:
+    st.session_state.first_run = True
 
-    # Application conditionnelle des filtres
+
+def compute_filtered_df():
+    filtered = df.copy()
+
     if selected_countries:
-        filtered_df = filtered_df[filtered_df["country"].isin(selected_countries)]
+        filtered = filtered[filtered["country"].isin(selected_countries)]
     if selected_regions:
-        filtered_df = filtered_df[filtered_df["region"].isin(selected_regions)]
+        filtered = filtered[filtered["region"].isin(selected_regions)]
     if selected_cuisines:
-        filtered_df = filtered_df[filtered_df["cuisines_clean"].isin(selected_cuisines)]
+        filtered = filtered[filtered["cuisines_clean"].isin(selected_cuisines)]
     if selected_prices:
-        filtered_df = filtered_df[filtered_df["price_level"].isin(selected_prices)]
+        filtered = filtered[filtered["price_level"].isin(selected_prices)]
 
-    filtered_df = filtered_df[filtered_df["avg_rating"] >= min_rating]
+    filtered = filtered[filtered["avg_rating"] >= min_rating]
+    return filtered
 
-    # Sauvegarde dans la session
-    st.session_state.filtered_df = filtered_df
+
+# 👉 On met à jour :
+# - si l'utilisateur clique sur le bouton
+# - OU au tout premier chargement de la page
+if apply_filters or st.session_state.first_run:
+    st.session_state.filtered_df = compute_filtered_df()
+    st.session_state.first_run = False
 
 # Récupération du dernier DataFrame filtré
 filtered_df = st.session_state.filtered_df
+
 
 # ==============================
 # 🗺️ AFFICHAGE DE LA CARTE (persistante)

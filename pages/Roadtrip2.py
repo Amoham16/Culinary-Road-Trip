@@ -3,6 +3,7 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 import numpy as np
+from huggingface_hub import hf_hub_download
 
 # ===========================
 # 🔹 Chargement & préparation des données
@@ -17,7 +18,16 @@ def load_data():
         "cuisines",
         "avg_rating", "total_reviews_count"
     ]
-    df = pd.read_csv("tripadvisor_european_restaurants.csv", usecols=usecols)
+    # Téléchargement depuis Hugging Face Hub
+    local_path = hf_hub_download(
+        repo_id="Amoham16/dataset-resto-10k",
+        repo_type="dataset",
+        filename="tripadvisor_clean.csv",
+    )
+
+    # Chargement depuis Hugging Face
+    df = pd.read_csv(local_path, usecols=usecols)
+
 
     # Nettoyage des colonnes texte
     text_cols = ["country", "region", "province", "city", "address", "price_level", "price_range", "cuisines"]
@@ -56,14 +66,14 @@ df = load_data()
 # ===========================
 # 🔹 Titre principal
 # ===========================
-st.title("🍽️ Open Data Culinary Road Trip")
+st.title("Open Data Culinary Road Trip")
 st.markdown("*Discover trending restaurants, find the best spots nearby, and plan a foodie road trip across Europe!*")
-st.write("Bienvenue dans votre exploration culinaire en Europe à partir de données **Open Data** 🍷")
+st.write("Bienvenue dans votre exploration culinaire en Europe à partir de données **Open Data** ")
 
 # ===========================
 # PAGE : ROAD TRIP PLANNER
 # ===========================
-st.header("🚗 Multi-Day Foodie Road Trip Planner")
+st.header("Multi-Day Foodie Road Trip Planner")
 st.markdown("Plan your perfect culinary journey across Europe!")
 
 # --- stocker le résultat dans le state (simple) ---
@@ -258,7 +268,7 @@ else:
     with cc4:
         st.metric("Avg Rating", f"⭐ {results['avg_rating']:.2f}")
 
-    st.subheader("📅 Your Itinerary")
+    st.subheader("Your Itinerary")
 
     day_idx = 0
     for city, n_days in days_per_city.items():
